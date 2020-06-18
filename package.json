@@ -1,0 +1,17 @@
+{
+  "name": "simple-graphql-yoga",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "graphql": "^15.1.0",
+    "graphql-upload": "^11.0.0",
+    "graphql-yoga": "^1.18.3"
+  }
+}
