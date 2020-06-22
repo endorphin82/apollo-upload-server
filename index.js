@@ -1,9 +1,11 @@
 // TODO: https://github.com/apollographql/apollo-server/issues/3508
 // const {uploadMiddleWare} = require("./uploadMiddleware");
-const {uploadFile} = require("./multerMiddleware");
+const {upload} = require("./upload");
 const uploadController = require("./controllers/upload");
 const multer = require("multer");
 const cors = require('cors')
+const fs = require('fs')
+const path = require('path')
 const {makeExecutableSchema} = require("graphql-tools");
 const {createWriteStream} = require('fs');
 const {GraphQLBoolean, GraphQLNonNull, GraphQLObjectType, GraphQLSchema, GraphQLString} = require("graphql")
@@ -14,10 +16,10 @@ const express = require('express')
 // const {ApolloServer} = require("apollo-server");
 const {GraphQLUpload} = require('graphql-upload');
 global.__basedir = __dirname;
-const path = '/';
+const pathBase = '/';
 const app = express();
 const corsOptions = {
-  origin: "http://localhost:300",
+  origin: "http://localhost:3000",
   credentials: true
 };
 
@@ -41,7 +43,7 @@ const typeDefs = `
    }
 
   type Mutation {
-    uploadFile(file: Upload!): File
+    uploadFile(file: Upload!): Boolean
   }
 
   type Query {
@@ -51,55 +53,75 @@ const typeDefs = `
 
 // var storage = multer.diskStorage({
 //   destination: (req, file, cb) => {
-//     cb(null, __basedir + "/resources/static/assets/uploads/");
+//     cb(null, __basedir + "uploads/");
 //   },
 //   filename: (req, file, cb) => {
 //     cb(null, `${Date.now()}-bezkoder-${file.originalname}`);
 //   },
 // });
+app.use("*", cors(corsOptions));
+const midLogger = (req, res, next) => {
+  console.log("Hello from logger\n");
+  next();
+};
+app.use("*", midLogger);
 
 const resolvers = {
   Mutation: {
     uploadFile: async (parent, {file}) => {
-      const {filename, mimetype, encoding} = await file;
+      const {createReadStream, filename, mimetype, encoding} = await file;
+      console.log('file', file)
+      // console.log('path', path)
+      if (!file) return false
+      else if (file) {
+        const readStream = createReadStream(filename)
+        readStream
+          .on('open', function () {
+            readStream.pipe(res)
+          })
+          .pipe(
+            fs.createWriteStream(
+              path.join(__dirname, "uploads/", filename)
+            )
+          )
+          .on("close", res => {
+            console.log('close ', res)
+          })
+        // upload(file, res, (err) => {
+        //   if (err) {
+        //     console.log('err', err)
+        //   }
+        // })
+        return true
+      }
+      // app.post('/', (req, res) => {
+      //    console.log('app post')
+      //    return upload(req, res, (err) => {
+      //      if (err) {
+      //        console.log('err', err)
+      //        return false
+      //      } else {
+      //        if (file == undefined) {
+      //          console.log('File undefined')
+      //          return false
+      //        } else {
+      //          console.log('File uploaded', filename)
+      //          return true
+      //        }
+      //      }
+      //    })
+      //  })
+
       // uploadFile.single("file")
 
-      console.log("uploadFile", uploadFile);
-      return true
+      // console.log("uploadFile", upload);
 
-      // const stream = createReadStream();
-      //
-      // // await new Promise((resolve, reject) => {
-      // //   stream.on('error', error => {
-      // //     unlink(path, () => {
-      // //       reject(error);
-      // //     });
-      // //   }).pipe(createWriteStream(name))
-      // //     .on('error', reject)
-      // //     .on('finish', resolve)
-      // // });
-      // console.log('-----------file written');
-      // return file;
-      // return file.then(file => {
-      //
-      //   return true;
-      // })
-      // console.log('file', file)
     }
   },
   Query: {
     hello: () => "hi"
   }
 };
-
-const midLogger = (req, res, next) => {
-  console.log("Hello from logger\n");
-  next();
-};
-
-const schema = makeExecutableSchema({typeDefs, resolvers});
-// const storag = multer({storage}).single("name")
-
 const plugLogger = {
   // Fires whenever a GraphQL request is received from a client.
   requestDidStart(requestContext) {
@@ -119,25 +141,20 @@ const plugLogger = {
     }
   }
 }
+const schema = makeExecutableSchema({typeDefs, resolvers});
 const server = new ApolloServer({
   schema, plugins: [
     plugLogger
   ]
 })
-app.use("*", cors(corsOptions));
+server.applyMiddleware({app, path: pathBase})
+
+
 // app.use("*", uploadMiddleWare);
 // app.use("*", uploadFile.single("file"), uploadController.uploadFiles);
-app.use("*", uploadFile.single("file"));
-// app.use("*", uploadFile.single("file"), (req, res) => {
-//     res.json({
-//       "name": req.file.filename,
-//       "type": req.file.mimetype,
-//       "size": req.file.size
-//     })
-//   }
-// )
-app.use("*", midLogger);
-server.applyMiddleware({app, path})
+// app.use("*", upload.single("file"));
+
+
 // server.applyMiddleware({ app, path })
 app.listen(
   {port: process.env.PORT || 4000},

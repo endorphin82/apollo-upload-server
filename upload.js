@@ -18,5 +18,5 @@ var storage = multer.diskStorage({
   },
 });
 
-var uploadFile = multer({ storage: storage, fileFilter: imageFilter });
-module.exports = {uploadFile};
+const upload = multer({ storage: storage, fileFilter: imageFilter });
+module.exports = {upload};
