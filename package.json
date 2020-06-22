@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "nodemon index.js",
+    "preinstall": "npx npm-force-resolutions"
   },
   "keywords": [],
   "author": "",
@@ -16,6 +17,11 @@
     "graphql-upload": "^11.0.0",
     "graphql-yoga": "^1.18.3",
     "multer": "^1.4.2",
+    "nodemon": "^2.0.4",
     "sanitize-filename": "^1.6.3"
+  },
+  "resolutions": {
+    "**/**/fs-capacitor": "^5.0.0",
+    "**/graphql-upload": "^9.0.0"
   }
 }
